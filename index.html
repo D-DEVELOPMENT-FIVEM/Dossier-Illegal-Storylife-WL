@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="img/SLWL.png" />
+    <title>Dossier illégal - Storylife WL</title>
+    <style>
+        /* Lecteur vidéo en haut à droite */
+.video-player-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 15px;
+    padding: 15px;
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    animation: slideInFromRight 1s ease forwards;
+    opacity: 0;
+    animation-delay: 1.5s;
+    transform: translateX(100px);
+}
+
+.video-logo {
+    margin-bottom: 10px;
+    text-align: center;
+    position: relative;
+}
+
+.video-logo-img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+    padding: 5px;
+    transition: all 0.3s ease;
+}
+
+.video-logo-img:hover {
+    border-color: rgba(52, 137, 235, 0.6);
+    transform: scale(1.05);
+}
+
+/* Indicateur d'attente d'interaction pour autoplay */
+.video-waiting::after {
+    content: '▶';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    background: rgba(52, 137, 235, 0.8);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    animation: pulse 1.5s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 0.8;
+        transform: translate(-50%, -50%) scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.1);
+    }
+}
+
+@keyframes volumePulse {
+    0%, 100% {
+        opacity: 0.8;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.2);
+    }
+}
+
+/* Animation pour afficher le lecteur vidéo (slide depuis la droite) */
+@keyframes slideInFromRight {
+    from { opacity: 0; transform: translateX(100px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.mini-video-player {
+    width: 250px;
+    height: 140px;
+    border-radius: 10px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    background: #000;
+    outline: none;
+    display: block; /* S'assurer que la vidéo est visible */
+    opacity: 1; /* S'assurer qu'elle n'est pas transparente */
+}
+
+.mini-video-player::-webkit-media-controls-panel {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+}
+
+.mini-video-player::-webkit-media-controls-play-button,
+.mini-video-player::-webkit-media-controls-pause-button {
+    background-color: #3489eb;
+    border-radius: 50%;
+}
+
+.mini-video-player::-webkit-media-controls-current-time-display,
+.mini-video-player::-webkit-media-controls-time-remaining-display {
+    color: white;
+    font-size: 12px;
+}
+
+/* Responsive pour le lecteur vidéo */
+@media (max-width: 768px) {
+    .video-player-container {
+        top: 10px;
+        right: 10px;
+        padding: 10px;
+    }
+
+    .mini-video-player {
+        width: 200px;
+        height: 110px;
+    }
+
+    .video-logo-img {
+        width: 40px;
+        height: 40px;
+    }
+}
+
+@media (max-width: 480px) {
+    .video-player-container {
+        position: relative;
+        margin: 20px auto;
+        max-width: 300px;
+    }
+
+    .mini-video-player {
+        width: 100%;
+        max-width: 280px;
+        height: auto;
+        aspect-ratio: 16/9;
+    }
+}
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #000;
+        }
+
+        .image-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            cursor: zoom-in;
+        }
+
+        .image-container img {
+            -webkit-user-drag: none;
+            user-select: none;
+            pointer-events: auto;
+            width: 100%;
+            height: auto;
+            display: block;
+            transition: transform 0.3s ease;
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-align: center;
+            font-size: 24px;
+            font-family: Arial, sans-serif;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+
+            pointer-events: none; /* ✅ CORRECTION IMPORTANTE */
+        }
+
+        .image-container:hover .overlay {
+            opacity: 1;
+        }
+
+        .image-container:hover img {
+            transform: scale(1.05);
+        }
+
+        .overlay .logo-title {
+            font-size: 48px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        @media (max-width: 480px) {
+            .overlay .logo-title { font-size: 32px; }
+        }
+
+        /* Zoom plein écran */
+        .lightbox {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            cursor: zoom-out;
+        }
+
+        .lightbox img {
+            max-width: 95%;
+            max-height: 95%;
+        }
+
+        /* Button and text overlay inside the lightbox (for Image 9 only) */
+        .lightbox-show-text-btn {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            z-index: 10002; /* au-dessus de l'overlay */
+            padding: 10px 14px;
+            border: none;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.95);
+            color: #000;
+            cursor: pointer;
+            font-family: Arial, sans-serif;
+            font-size: 15px;
+            display: none;
+        }
+
+        .lightbox.text-available .lightbox-show-text-btn {
+            display: block;
+        }
+
+        .lightbox-text-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            background: rgba(0,0,0,0.9);
+            font-size: 22px;
+            padding: 20px;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+            pointer-events: none;
+            z-index: 10001; /* en dessous du bouton */
+        }
+
+        .lightbox-text-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+    </style> 
+</head>
+<body>
+
+    <!-- Lecteur vidéo en haut à droite -->
+    <div class="video-player-container">
+        <div class="video-logo"> 
+            <a href="https://www.youtube.com/@Label_Naps">
+                <img src="img/label.png" alt="Label_Naps" class="video-logo-img">
+            </a>
+            <div class="volume-indicator"></div>
+        </div>
+        <div style="position: relative;">
+            <video class="mini-video-player" controls autoplay muted>
+                <source src="videos/tattoo-demo.mp4" type="video/mp4">
+                Votre navigateur ne supporte pas la lecture vidéo.
+            </video>
+            <div class="video-status" id="videoStatus">Chargement...</div>
+        </div>
+        <!-- Version alternative avec iframe YouTube pour les navigateurs problématiques -->
+        <!-- Décommentez cette section si la vidéo locale ne fonctionne pas -->
+        <!--
+        <iframe class="mini-video-player"
+                src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=0&mute=1&controls=1&modestbranding=1&rel=0"
+                title="YouTube video player"
+                frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen>
+        </iframe>
+        -->
+    </div>
+
+    <script>
+        // Gestion du lecteur vidéo
+        document.addEventListener('DOMContentLoaded', function() {
+            const video = document.querySelector('.mini-video-player');
+
+            if (video) {
+                console.log('Lecteur vidéo trouvé:', video);
+                console.log('Source de la vidéo:', video.querySelector('source')?.src);
+
+                // Précharger la vidéo pour améliorer les performances
+                video.preload = 'auto';
+                console.log('Préchargement activé');
+
+                // Écouter l'événement de chargement de la vidéo
+                video.addEventListener('loadeddata', function() {
+                    console.log('Vidéo chargée avec succès');
+                    document.getElementById('videoStatus').textContent = 'Prêt - Cliquez pour jouer';
+                });
+
+                video.addEventListener('error', function(e) {
+                    console.error('Erreur de chargement vidéo:', e);
+                    document.getElementById('videoStatus').textContent = 'Erreur de chargement — utilisation d\'un fallback';
+
+                    // Fallback : remplacer la balise <video> par un <iframe> YouTube (lecture muette/autoplay si possible)
+                    try {
+                        const iframe = document.createElement('iframe');
+                        iframe.className = 'mini-video-player';
+                        iframe.src = 'https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=1&controls=1&modestbranding=1&rel=0';
+                        iframe.title = 'Fallback video';
+                        iframe.frameBorder = '0';
+                        iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+                        iframe.allowFullscreen = true;
+
+                        video.parentNode.replaceChild(iframe, video);
+                        console.log('Fallback iframe inséré');
+                        document.getElementById('videoStatus').textContent = 'Lecture via fallback YouTube';
+                    } catch (err) {
+                        console.error('Impossible d\'insérer le fallback iframe:', err);
+                        document.getElementById('videoStatus').textContent = 'Fallback indisponible';
+                    }
+                });
+
+                // Écouter le démarrage de la vidéo
+                video.addEventListener('play', function() {
+                    document.getElementById('videoStatus').textContent = 'En lecture';
+                });
+
+                video.addEventListener('pause', function() {
+                    document.getElementById('videoStatus').textContent = 'En pause';
+                });
+
+                // Fonction pour activer le son dès le lancement
+                function enableVolume() {
+                    // Enlever l'attribut muted si présent
+                    if (video.muted) {
+                        video.muted = false;
+                    }
+                    // Régler le volume à 10%
+                    video.volume = 0.1;
+                    console.log('Volume activé à 10%');
+                }
+
+                // Activer le volume dès que la vidéo commence à jouer
+                video.addEventListener('play', function() {
+                    setTimeout(enableVolume, 100);
+                });
+
+                // Gestion du clic pour démarrer la vidéo
+                video.addEventListener('click', function() {
+                    if (video.paused) {
+                        video.play().then(function() {
+                            console.log('Vidéo démarrée manuellement');
+                        }).catch(function(e) {
+                            console.log('Erreur lors du démarrage:', e);
+                        });
+                    }
+                });
+
+                // Écouter les événements de la vidéo
+                video.addEventListener('pause', function() {
+                    console.log('Vidéo mise en pause');
+                });
+
+                video.addEventListener('ended', function() {
+                    console.log('Vidéo terminée');
+                });
+
+                // Gestion de la visibilité de la page (pour les navigateurs stricts)
+                document.addEventListener('visibilitychange', function() {
+                    if (!document.hidden && video.paused) {
+                        video.play().then(function() {
+                            console.log('Vidéo redémarrée après visibilité');
+                        }).catch(function(e) {
+                            console.log('Impossible de redémarrer:', e);
+                        });
+                    }
+                });
+
+                // Gestion du clic sur le lecteur pour démarrer si autoplay bloqué
+                video.addEventListener('click', function() {
+                    if (video.paused) {
+                        video.play().then(function() {
+                            console.log('Vidéo démarrée manuellement');
+                        });
+                    }
+                });
+            }
+        });
+    </script>
+
+    <div class="image-container">
+        <img src="img/logo.png" alt="Image 1">
+        <div class="overlay"><span class="logo-title">LOGO</span><br>Cliquer pour zoomer</div>
+    </div>
+
+    <div class="image-container">
+        <img src="img/Origines.png" alt="Image 2">
+        <div class="overlay"><span class="logo-title">Origines</span><br>Cliquer pour zoomer</div>
+    </div>
+
+    <div class="image-container">
+        <img src="img/Introduction.png" alt="Image 3">
+        <div class="overlay"><span class="logo-title">Introduction</span><br>Cliquer pour zoomer</div>
+    </div>
+
+    <div class="image-container">
+        <img src="img/Engagements.png" alt="Image 4">
+        <div class="overlay"><span class="logo-title">Engagements</span><br>Cliquer pour zoomer</div>
+    </div>
+
+    <div class="image-container">
+        <img src="img/Ambitions.png" alt="Image 5">
+        <div class="overlay"><span class="logo-title">Ambitions</span><br>Cliquer pour zoomer</div>
+    </div>
+
+    <div class="image-container">
+        <img src="img/Informations.png" alt="Image 6">
+        <div class="overlay"><span class="logo-title">Informations</span><br>Cliquer pour zoomer</div>
+    </div>
+
+    <div class="image-container">
+        <img src="img/Activités.png" alt="Image 7">
+        <div class="overlay"><span class="logo-title">Activités</span><br>Cliquer pour zoomer</div>
+    </div>
+
+    <div class="image-container">
+        <img src="img/Expériences.png" alt="Image 8">
+        <div class="overlay"><span class="logo-title">Expériences</span><br>Cliquer pour zoomer</div>
+    </div>
+
+    <div class="image-container image-9">
+        <img src="img/Membres.png" alt="Image 9">
+        <div class="overlay"><span class="logo-title">Membres</span><br>Cliquer pour zoomer</div>
+    </div> 
+
+    <div class="lightbox" id="lightbox">
+        <img id="lightbox-img" src="" alt="Zoom">
+        <button class="lightbox-show-text-btn" aria-expanded="false">Afficher le texte</button>
+        <div class="lightbox-text-overlay" aria-hidden="true">Lead :<BR>
+803165915607990273 – Nom RP : Luciano Santos – Rôle : Lead<BR><BR>
+
+Co-Lead :<BR>
+1378343939093954642 – Nom RP : Joaquim Rodriguez Garvia – Rôle : Co-Lead<BR><BR>
+
+Membres :<BR>
+394992625570283520 - Nom RP : Lucaro Monteza – Rôle : Teniente<BR>
+1160575642627231894 - Nom RP : José Alejandro - Rôle : Novato<BR>
+464861445897846784 - Nom RP Luma Rojas - Rôle : Novato <BR>
+1396935492255354880 - Nom RP : Mattéo Guzman - Rôle : Novato<BR>
+879418747205591092 - Nom RP : Romano Santos  - Rôle : Novato<BR>
+1178845504390561875 - Nom RP : Tomàs Hernandez  - Rôle : Novato<BR>
+940252311626850345 – Nom RP : Angèl Castillo – Rôle : Novato<BR>
+916908128841379870 – Nom RP : El Nino – Rôle : Novato<BR>
+1391064092760080424 - Nom RP : Hernesto – Rôle : Novato<BR>
+1430495954254958603 - Nom RP : Ramon - Rôle : Novato<BR>
+350676560476373003 - Nom RP : Santiago - Rôle : Novato<BR>
+1230088017562304553 - Nom RP : Sergio Souza - Rôle : Novato<BR>
+1336284253515812938 - Nom RP : Malio Gorvino - Rôle : Novato<BR>
+1235004743970193508 – Nom RP : Kellina Nova – Rôle : Novato<BR>
+1373262416087093300 – Nom RP : Zepeck Alvarez – Rôle : Novato<BR>
+978021923302801489 – Nom RP : Alvaro Westermunio – Rôle : Novato<BR>
+1325530421655638071 – Nom RP : Juan – Rôle : Novato<BR>
+</div>
+    </div> 
+
+    <script>
+        const images = document.querySelectorAll('.image-container img');
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImg = document.getElementById('lightbox-img');
+        const lbBtn = document.querySelector('.lightbox-show-text-btn');
+        const lbText = document.querySelector('.lightbox-text-overlay');
+
+        images.forEach(img => {
+            img.addEventListener('click', () => {
+                lightboxImg.src = img.src;
+                lightbox.style.display = 'flex';
+
+                // If this is Image 9, enable text button in the lightbox
+                if (img.alt === 'Image 9' || (img.src && img.src.includes('Membres.png'))) {
+                    lightbox.classList.add('text-available');
+                    lbBtn.setAttribute('aria-expanded', 'false');
+                    lbText.classList.remove('show');
+                    lbText.setAttribute('aria-hidden', 'true');
+                    lbBtn.textContent = 'Afficher le texte';
+                } else {
+                    lightbox.classList.remove('text-available');
+                    lbText.classList.remove('show');
+                }
+            });
+        });
+
+        // Toggle overlay text in lightbox (stop propagation so lightbox doesn't close)
+        lbBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const showing = lbText.classList.toggle('show');
+            lbBtn.setAttribute('aria-expanded', showing);
+            lbText.setAttribute('aria-hidden', !showing);
+            lbBtn.textContent = showing ? 'Masquer le texte' : 'Afficher le texte';
+        });
+
+        // Prevent clicks on text overlay from closing the lightbox
+        lbText.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+        // Clicking on background of lightbox closes it
+        lightbox.addEventListener('click', () => {
+            lightbox.style.display = 'none';
+            lightboxImg.src = '';
+            lightbox.classList.remove('text-available');
+            lbText.classList.remove('show');
+            lbBtn.setAttribute('aria-expanded', 'false');
+            lbBtn.textContent = 'Afficher le texte';
+            lbText.setAttribute('aria-hidden', 'true');
+        });
+    </script>
+</body>
+</html>
